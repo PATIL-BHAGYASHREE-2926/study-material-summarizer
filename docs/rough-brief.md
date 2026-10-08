@@ -2,30 +2,31 @@
 
 ## 1. What is the project?
 
-So we are going to build a website with proper UI to summarize PPT with neat diagram. Also we are going to create a small 20 MCQ on that PPT for stuednts.
+A web application with an intuitive UI designed to summarize both PowerPoint presentations (.ppt, .pptx) and PDF documents (.pdf). It generates structured, concise summaries, visual conceptual diagrams (Mermaid.js), and a 20-question multiple-choice quiz (MCQ) for students.
 
 ## 2. Who is it for?
 
-Students
+Students and self-learners looking to quickly digest lecture slides, research papers, and study material.
 
-## 3. Three must-have features
+## 3. Must-have features
 
-1. PPT Summarization with neat diagram
-2. MCQ 
-3. The summary should not be too long or too short. It should cover the important points of the PPT in a clear and concise way.
+1. **Document Upload & Extraction**: Support for both PPT/PPTX and PDF files.
+2. **Balanced Summarization**: A clear, well-structured summary (TL;DR, key takeaways, and section/slide breakdown) that is neither too brief nor overwhelming.
+3. **Conceptual Diagrams**: Automatic generation of at least one valid, clean Mermaid diagram visualizing the core concepts or workflows.
+4. **Interactive 20-Question MCQ Quiz**: 20 relevant multiple-choice questions based on the content, including answer keys and explanations to test understanding.
 
 ## 4. Out of scope
 
-1. Very large presentations.
-2. Support for non-PowerPoint formats such as Word, PDF, or Excel.
-3. OCR for scanned/image-only slides.
+1. Very large files or massive textbooks (e.g., presentations over 100 slides or PDFs over 100 pages).
+2. Non-supported formats such as Word (.doc, .docx) or Excel (.xls, .xlsx).
+3. OCR processing for scanned or image-only slides/pages (text must be extractable).
+4. User authentication and cloud history/database storage (for MVP).
 
 ## 5. How will I know it works?
 
-1. A user can upload a valid PPT/PPTX and receive a structured summary.
-2. The summary contains a TL;DR, key points, and slide/section-wise information.
-3. The system generates at least one understandable Mermaid diagram from the presentation content.
-4. The system generates 20 MCQs based on the uploaded presentation.
-5. The generated Mermaid diagram is valid and renders correctly in the website.
-6. Invalid or unsupported presentations are rejected with a clear error message.
-7. The complete workflow from PPT upload to viewing the summary, diagrams, and MCQs works without manual intervention.
+1. A user can upload a valid PPT, PPTX, or PDF file and successfully process it.
+2. The resulting summary includes a concise TL;DR, key points, and slide/section-level breakdowns.
+3. The system generates valid Mermaid syntax that renders cleanly in the browser interface.
+4. The system generates exactly 20 relevant MCQs based on the uploaded document.
+5. Unsupported file types, corrupted files, or empty documents are rejected with clear, user-friendly error messages.
+6. The entire workflow—from upload to displaying the summary, diagram, and quiz—runs smoothly without manual intervention.
