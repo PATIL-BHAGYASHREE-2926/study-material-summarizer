@@ -82,8 +82,12 @@ export function isMermaidParseAvailable(): boolean {
  * Read from the source rather than from mermaid's parse result so the allowlist
  * is enforced explicitly and testably, and so it still applies in a context
  * where the parser cannot run.
+ *
+ * Exported because `normalize.ts` needs the same reading of the first
+ * meaningful line to decide which diagrams it may rewrite. One reader, so the
+ * allowlist and the normaliser can never disagree about what a diagram declares.
  */
-function declaredDiagramType(code: string): string | undefined {
+export function readDeclaredDiagramType(code: string): string | undefined {
     for (const rawLine of code.split("\n")) {
         const line = rawLine.trim();
         if (line.length === 0) continue;
@@ -103,7 +107,7 @@ function declaredDiagramType(code: string): string | undefined {
  * things that can be rendered is enumerable.
  */
 function hasAllowedDeclaration(code: string): boolean {
-    const declared = declaredDiagramType(code);
+    const declared = readDeclaredDiagramType(code);
     if (declared === undefined) return false;
     return ALLOWED_MERMAID_DIAGRAMS.some(
         (allowed) => allowed.toLowerCase() === declared,

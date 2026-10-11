@@ -172,6 +172,7 @@ Hard requirements, all enforced after you answer:
 - \`correctIndex\` is a whole number from 0 to ${QUIZ_OPTION_COUNT - 1} and points at the correct option.
 - Every question \`id\` is unique.
 - \`diagram.mermaidCode\` is Mermaid source only, starting with a diagram type declaration such as \`flowchart TD\`. It contains no HTML tags, no \`script\` or \`style\` blocks, no \`click\` or \`href\` directives, and no \`%%{init:...}%%\` directives.
+- If a \`flowchart\` node label contains any of \`(\` \`)\` \`[\` \`]\` \`{\` \`}\` \`|\` \`@\` \`>\` or \`"\`, wrap that whole label in double quotes - \`A["Light reactions (thylakoid)"]\` or \`H["Precision@k"]\` - because Mermaid reads those characters as syntax inside an unquoted label and the diagram will not render.
 - If the document does not support a field, still supply a truthful value derived from the document. Never invent facts that are not in it.`;
 }
 

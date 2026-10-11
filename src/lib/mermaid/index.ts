@@ -2,11 +2,12 @@ import { MAX_DIAGRAM_GENERATION_ATTEMPTS } from "@/lib/constants/limits";
 import type { StudyDiagram } from "@/lib/validation/ai-schemas";
 
 import { sanitizeMermaidCode } from "./sanitize";
+import { normalizeMermaidSyntax } from "./normalize";
 import { parseMermaidCode, type MermaidParseGate } from "./validate";
 
 /**
- * The public entry point of the Mermaid safety layer: sanitise, validate, retry
- * once, fall back.
+ * The public entry point of the Mermaid safety layer: sanitise, normalise,
+ * parse-gate, retry once, fall back.
  *
  * The invariant this module exists to hold: **no unvalidated Mermaid ever
  * leaves it**. Every code path returns either a string that passed both the
@@ -74,6 +75,15 @@ export const FALLBACK_DIAGRAM: StudyDiagram = {
  * Returns the reason on failure so the regenerator can be told what class of
  * problem to avoid, without being shown the rejected code (which is model output
  * and must not be replayed into a prompt).
+ *
+ * The middle step is `normalizeMermaidSyntax`, and its position is deliberate.
+ * It runs on *sanitised* text, so it only ever re-delimits label text the
+ * sanitiser has already cleared, and it runs *before* the parse gate so the
+ * gate judges the code that will actually be shipped to the browser. Without it,
+ * a label such as `C[Water splitting (O2 + e- + H+)]` reaches the browser as a
+ * parse error: the server-side gate is deferred (no DOM on the Node runtime),
+ * so the browser is the first and only parser the diagram ever meets, and the
+ * regeneration retry designed to catch this never runs.
  */
 async function prepareDiagram(diagram: StudyDiagram): Promise<
     | { ok: true; code: string; gate: MermaidParseGate }
@@ -93,7 +103,7 @@ async function prepareDiagram(diagram: StudyDiagram): Promise<
         };
     }
 
-    const validated = await parseMermaidCode(sanitized.code);
+    const validated = await parseMermaidCode(normalizeMermaidSyntax(sanitized.code).code);
     if (!validated.ok) {
         return {
             ok: false,

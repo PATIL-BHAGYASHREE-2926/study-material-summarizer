@@ -1,3 +1,6 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
     MAX_DOCUMENT_UNITS,
     MAX_EXTRACTED_TEXT_CHARS,
@@ -51,6 +54,7 @@ interface PdfJsModule {
         isEvalSupported?: boolean;
         useSystemFonts?: boolean;
         disableFontFace?: boolean;
+        standardFontDataUrl?: string;
     }): PdfJsLoadingTask;
 }
 
@@ -156,6 +160,23 @@ async function loadPdfJsOrThrow(): Promise<PdfJsModule> {
         // already started a fresh load that should stay cached.
         if (pdfJsPromise === pending) pdfJsPromise = null;
         throw new DocumentProcessingError("PARSER_UNAVAILABLE", undefined, { cause: error });
+    }
+}
+
+/**
+ * Path to standard font data provided by pdfjs-dist.
+ *
+ * Required by pdf.js when documents use standard 14 non-embedded fonts.
+ * Must include the trailing slash so pdf.js can append font filenames.
+ */
+function getStandardFontDataUrl(): string {
+    try {
+        const pkg = import.meta.resolve("pdfjs-dist/package.json");
+        const dir = path.join(path.dirname(fileURLToPath(pkg)), "standard_fonts");
+        return dir.replaceAll("\\", "/") + "/";
+    } catch {
+        const dir = path.join(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts");
+        return dir.replaceAll("\\", "/") + "/";
     }
 }
 
@@ -543,6 +564,7 @@ export async function extractPdfDocument(
             isEvalSupported: false,
             useSystemFonts: false,
             disableFontFace: true,
+            standardFontDataUrl: getStandardFontDataUrl(),
         });
     } catch (error) {
         throw toPdfError(error);

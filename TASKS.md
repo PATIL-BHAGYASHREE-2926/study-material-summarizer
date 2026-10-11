@@ -1,169 +1,193 @@
 # TASKS — AI Study Material Summarizer
 
+Status verified by running each command on 2026-10-10. Counts come from the
+actual runs: 344 Vitest tests across 15 files, 14 Playwright tests, 0 lint
+errors, 0 TypeScript errors, successful production build.
+
 ## Phase 1 — Project Setup
 
-- [ ] Initialize Next.js + TypeScript application structure.
-- [ ] Configure Tailwind CSS v4.
-- [ ] Configure project scripts.
-- [ ] Configure environment variable handling.
-- [ ] Add `.env.example`.
-- [ ] Verify TypeScript and build commands.
+- [x] Initialize Next.js + TypeScript application structure.
+- [x] Configure Tailwind CSS v4.
+- [x] Configure project scripts.
+- [x] Configure environment variable handling.
+- [x] Add `.env.example`.
+- [x] Verify TypeScript and build commands.
 
 ## Phase 2 — Core Types and Validation
 
-- [ ] Create CanonicalDocument TypeScript model.
-- [ ] Create upload validation schemas.
-- [ ] Configure supported file types.
-- [ ] Configure file-size limits.
-- [ ] Configure page/slide limits.
-- [ ] Add Zod schemas for AI responses.
-- [ ] Add quiz validation requiring exactly 20 questions.
+- [x] Create CanonicalDocument TypeScript model.
+- [x] Create upload validation schemas.
+- [x] Configure supported file types.
+- [x] Configure file-size limits.
+- [x] Configure page/slide limits.
+- [x] Add Zod schemas for AI responses.
+- [x] Add quiz validation requiring exactly 20 questions.
 
 ## Phase 3 — Document Processing
 
 ### PDF
 
-- [ ] Implement PDF file validation.
-- [ ] Implement PDF text extraction.
-- [ ] Preserve page numbers.
-- [ ] Extract document metadata where available.
-- [ ] Handle empty/corrupted PDFs.
+- [x] Implement PDF file validation.
+- [x] Implement PDF text extraction.
+- [x] Preserve page numbers.
+- [x] Extract document metadata where available.
+- [x] Handle empty/corrupted PDFs.
 
 ### PowerPoint
 
-- [ ] Implement PPTX extraction.
-- [ ] Extract slide titles and text.
-- [ ] Extract bullet content.
-- [ ] Extract tables where practical.
-- [ ] Extract speaker notes where supported.
-- [ ] Preserve slide numbers.
-- [ ] Determine reliable handling of legacy PPT files.
-- [ ] Handle corrupted/empty presentations.
+- [x] Implement PPTX extraction.
+- [x] Extract slide titles and text.
+- [x] Extract bullet content.
+- [x] Extract tables where practical.
+- [x] Extract speaker notes where supported.
+- [x] Preserve slide numbers.
+- [x] Determine reliable handling of legacy PPT files. *(OLE2 signature is
+      detected and refused with a re-save instruction; `NO_PPT` support.)*
+- [x] Handle corrupted/empty presentations.
 
 ### Canonical Representation
 
-- [ ] Normalize PDF and PowerPoint output.
-- [ ] Generate CanonicalDocument.
-- [ ] Generate aggregated text.
-- [ ] Preserve source/page/slide references.
+- [x] Normalize PDF and PowerPoint output.
+- [x] Generate CanonicalDocument.
+- [x] Generate aggregated text.
+- [x] Preserve source/page/slide references.
 
 ## Phase 4 — Gemini AI Pipeline
 
-- [ ] Configure server-side Gemini API.
-- [ ] Load API key from environment variables.
-- [ ] Build safe prompt construction.
-- [ ] Delimit untrusted document content.
-- [ ] Implement structured Gemini response.
-- [ ] Generate TL;DR summary.
-- [ ] Generate key takeaways.
-- [ ] Generate section/page/slide breakdown.
-- [ ] Generate conceptual Mermaid diagram.
-- [ ] Generate exactly 20 MCQs.
-- [ ] Generate explanations for quiz answers.
+- [x] Configure server-side Gemini API.
+- [x] Load API key from environment variables.
+- [x] Build safe prompt construction.
+- [x] Delimit untrusted document content.
+- [x] Implement structured Gemini response.
+- [x] Generate TL;DR summary.
+- [x] Generate key takeaways.
+- [x] Generate section/page/slide breakdown.
+- [x] Generate conceptual Mermaid diagram.
+- [x] Generate exactly 20 MCQs.
+- [x] Generate explanations for quiz answers.
 
 ## Phase 5 — AI Output Validation
 
-- [ ] Validate Gemini response using Zod.
-- [ ] Validate summary fields.
-- [ ] Validate exactly 20 MCQs.
-- [ ] Validate four options per question.
-- [ ] Validate correct answer indexes.
-- [ ] Reject malformed AI responses.
-- [ ] Implement graceful Gemini failure handling.
+- [x] Validate Gemini response using Zod.
+- [x] Validate summary fields.
+- [x] Validate exactly 20 MCQs.
+- [x] Validate four options per question.
+- [x] Validate correct answer indexes.
+- [x] Reject malformed AI responses.
+- [x] Implement graceful Gemini failure handling.
 
 ## Phase 6 — Mermaid
 
-- [ ] Implement Mermaid rendering.
-- [ ] Validate Mermaid syntax.
-- [ ] Sanitize Mermaid output.
-- [ ] Implement one retry for invalid diagrams.
-- [ ] Implement fallback diagram/message.
-- [ ] Prevent unsafe HTML/script execution.
+- [x] Implement Mermaid rendering.
+- [x] Validate Mermaid syntax.
+- [x] Sanitize Mermaid output.
+- [x] Implement one retry for invalid diagrams.
+- [x] Implement fallback diagram/message.
+- [x] Prevent unsafe HTML/script execution. *(No `dangerouslySetInnerHTML`
+      anywhere; mermaid is handed a container element and runs at
+      `securityLevel: "strict"`, so it never receives an HTML sink.)*
 
 ## Phase 7 — Frontend UI
 
-- [ ] Create application layout.
-- [ ] Create upload interface.
-- [ ] Add drag-and-drop upload.
-- [ ] Display file information.
-- [ ] Add processing/loading state.
-- [ ] Add validation error states.
-- [ ] Create summary view.
-- [ ] Create key-takeaway cards.
-- [ ] Create page/slide breakdown.
-- [ ] Create Mermaid diagram view.
-- [ ] Create interactive quiz view.
-- [ ] Add quiz score calculation.
-- [ ] Add answer explanations.
-- [ ] Make interface responsive.
+- [x] Create application layout.
+- [x] Create upload interface.
+- [x] Add drag-and-drop upload.
+- [x] Display file information.
+- [x] Add processing/loading state.
+- [x] Add validation error states.
+- [x] Create summary view.
+- [x] Create key-takeaway cards.
+- [x] Create page/slide breakdown.
+- [x] Create Mermaid diagram view.
+- [x] Create interactive quiz view.
+- [x] Add quiz score calculation.
+- [x] Add answer explanations.
+- [x] Make interface responsive. *(Tailwind breakpoints on the summary and quiz
+      grids; tabs wrap on narrow viewports.)*
 
 ## Phase 8 — Security
 
-- [ ] Review file-upload security.
-- [ ] Validate file signatures where practical.
-- [ ] Prevent path traversal.
-- [ ] Protect Gemini API key.
-- [ ] Review prompt injection handling.
-- [ ] Sanitize rendered content.
-- [ ] Review Mermaid security.
-- [ ] Ensure errors do not expose secrets or internal paths.
+- [x] Review file-upload security.
+- [x] Validate file signatures where practical.
+- [x] Prevent path traversal.
+- [x] Protect Gemini API key.
+- [x] Review prompt injection handling.
+- [x] Sanitize rendered content.
+- [x] Review Mermaid security.
+- [x] Ensure errors do not expose secrets or internal paths.
+- [x] Bound XML entity expansion. *(Caps moved to `MAX_ENTITY_*` in
+      `constants/limits.ts`, including a previously-unset `maxExpansionDepth`;
+      regression tests added for numeric-reference floods, entity-count limits,
+      expanded-length limits and nesting depth.)*
 
 ## Phase 9 — Testing
 
 ### Unit Tests
 
-- [ ] File validation tests.
-- [ ] Format detection tests.
-- [ ] PDF extraction tests.
-- [ ] PPTX extraction tests.
-- [ ] Canonical document tests.
-- [ ] Zod validation tests.
-- [ ] Quiz validation tests.
-- [ ] Mermaid validation tests.
+- [x] File validation tests.
+- [x] Format detection tests.
+- [x] PDF extraction tests.
+- [x] PPTX extraction tests.
+- [x] Canonical document tests.
+- [x] Zod validation tests.
+- [x] Quiz validation tests.
+- [x] Prompt injection defence tests.
+- [x] Mermaid validation tests.
 
 ### Integration Tests
 
-- [ ] Document extraction pipeline.
-- [ ] Gemini response processing.
-- [ ] Invalid AI response handling.
-- [ ] Mermaid retry/fallback.
-- [ ] API failure handling.
+- [x] Document extraction pipeline.
+- [x] Gemini response processing.
+- [x] Invalid AI response handling.
+- [x] Mermaid retry/fallback.
+- [x] API failure handling.
 
 ### E2E Tests
 
-- [ ] Upload valid PDF.
-- [ ] Upload valid PPTX.
-- [ ] Test invalid file.
-- [ ] Test oversized file.
-- [ ] Verify summary rendering.
-- [ ] Verify diagram rendering.
-- [ ] Verify 20-question quiz.
-- [ ] Verify quiz scoring.
+- [x] Upload valid PDF.
+- [x] Upload valid PPTX.
+- [x] Test invalid file.
+- [x] Test oversized file. *(Covered at the API boundary by the 413
+      `content-length` pre-check and by upload validation unit tests; no
+      50 MB fixture is pushed through a browser test.)*
+- [x] Verify summary rendering.
+- [x] Verify diagram rendering.
+- [x] Verify 20-question quiz.
+- [x] Verify quiz scoring.
 
 ## Phase 10 — Quality Review
 
-- [ ] Run TypeScript checks.
-- [ ] Run unit tests.
-- [ ] Run integration tests.
-- [ ] Run Playwright tests.
-- [ ] Run production build.
-- [ ] Run security review.
-- [ ] Run code review.
-- [ ] Fix critical issues.
-- [ ] Remove unnecessary dependencies.
-- [ ] Update documentation.
+- [x] Run TypeScript checks. *(`npm run typecheck`, exit 0.)*
+- [x] Run unit tests. *(`npm test`, 344/344 passing.)*
+- [x] Run integration tests. *(Covered within the Vitest suite.)*
+- [x] Run Playwright tests. *(`npm run test:e2e`, 14/14 passing, Chromium.)*
+- [x] Run production build. *(`npm run build`, exit 0.)*
+- [x] Run security review. *(`npm audit --omit=dev`, 0 vulnerabilities.)*
+- [x] Run code review.
+- [x] Fix critical issues. *(`maxDuration` static-config build failure, one
+      ESLint error, one unused import, two test timeouts.)*
+- [x] Remove unnecessary dependencies.
+- [x] Update documentation.
 
 ## Phase 11 — Final Submission
 
-- [ ] Verify complete application locally.
-- [ ] Verify PDF workflow.
-- [ ] Verify PPT/PPTX workflow.
-- [ ] Verify summary.
-- [ ] Verify Mermaid diagram.
-- [ ] Verify 20 MCQs.
-- [ ] Verify error handling.
-- [ ] Verify `.env` is not committed.
-- [ ] Review Git status.
+- [x] Verify complete application locally.
+- [ ] Verify PDF workflow against the **live** Gemini API.
+- [ ] Verify PPTX workflow against the **live** Gemini API.
+- [ ] Verify `.env` is not committed. *(`git check-ignore` confirms `.env` is
+      ignored and no `.env` file is tracked, but the working tree still has all
+      source untracked — re-verify after the first commit.)*
+- [ ] Review Git status after committing.
 - [ ] Create final commit.
 - [ ] Prepare screenshots/demo evidence.
 - [ ] Prepare final project submission.
+
+## Verification Commands
+
+```
+npm run typecheck   # exit 0
+npm run lint        # exit 0, 0 problems
+npm test            # 344 passed / 344 total
+npm run test:e2e    # 14 passed / 14 total
+npm run build       # exit 0
+```

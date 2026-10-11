@@ -57,6 +57,7 @@ function buildCorrectionInstruction(reasons: string[]): string {
             : "The diagram did not pass validation.",
         "Write one new Mermaid diagram from scratch, based on the document text, using a simple diagram type such as `flowchart TD`, `sequenceDiagram`, `classDiagram`, or `mindmap`.",
         "Use plain text labels only. No HTML tags, no `script` or `style`, no `click` or `href` directives, no `%%{init:...}%%` directives, and no URLs of any kind.",
+        'If a `flowchart` node label contains any of `( ) [ ] { } | @ >` or `"`, wrap that whole label in double quotes - `A["Light reactions (thylakoid)"]` or `H["Precision@k"]`. Mermaid reads those characters as syntax inside an unquoted label, which is the most common reason a diagram fails to render.',
         `Keep it under ${MAX_CORRECTED_DIAGRAM_CHARS} characters.`,
         "Return only the JSON object described in your instructions.",
     ].join("\n");

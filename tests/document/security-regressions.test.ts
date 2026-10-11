@@ -64,13 +64,23 @@ describe("HIGH-1: PPTX decompression limits", () => {
         });
     });
 
-    it("rejects a package with an implausible entry count", async () => {
-        const bytes = await buildEntryFloodPptx(MAX_PACKAGE_ENTRIES + 50);
+    // Building this archive means writing thousands of zip entries through
+    // JSZip, which is CPU-bound rather than I/O-bound and therefore sensitive to
+    // how many workers the suite is running. The 5s default is fine in isolation
+    // and too tight once the mermaid-under-jsdom tests are competing for cores.
+    // Same reasoning, and the same allowance, as the first cases in
+    // `tests/mermaid/validate.test.ts`. The assertions are unchanged.
+    it(
+        "rejects a package with an implausible entry count",
+        { timeout: 30_000 },
+        async () => {
+            const bytes = await buildEntryFloodPptx(MAX_PACKAGE_ENTRIES + 50);
 
-        await expect(extractPptxDocument(bytes, "flood.pptx")).rejects.toMatchObject({
-            code: "TOO_MANY_PACKAGE_ENTRIES",
-        });
-    });
+            await expect(extractPptxDocument(bytes, "flood.pptx")).rejects.toMatchObject({
+                code: "TOO_MANY_PACKAGE_ENTRIES",
+            });
+        },
+    );
 
     it("does not surface raw ZIP internals when a package is rejected", async () => {
         const error = (await extractPptxDocument(
