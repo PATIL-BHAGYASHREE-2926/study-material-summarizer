@@ -197,7 +197,99 @@ test.describe("upload to results", () => {
         await expect(svg).toContainText("Chunking Strategies");
     });
 
-    test("still reports the failure notice for genuinely invalid Mermaid", async ({ page }) => {
+    /**
+ * The diagram the live Groq request returned for `AAPLecture5_RAG_Fundamentals.pdf`,
+ * captured verbatim from the `/api/summarize` response body.
+ *
+ * ## Why this exact source is pinned
+ *
+ * It is ordinary Mermaid - quoted labels, chained edges, two subgraphs - and it
+ * renders correctly the moment it is given a container with width. The failure it
+ * exposed was not about this syntax at all: `results-view.tsx` mounts every tab
+ * panel and hides the inactive ones, so the diagram was being drawn into a
+ * container measuring `clientWidth === 0`. Mermaid resolved without throwing and
+ * produced nothing, and because the effect depends only on `[code, containerRef]`,
+ * opening the tab never redrew it.
+ *
+ * A regression pinned to this source therefore fails if the layout gate regresses,
+ * and would not have been caught by any test using a single-node diagram.
+ */
+const LIVE_RAG_SUBGRAPH_DIAGRAM = readFileSync(
+    new URL("../tests/mermaid/fixtures/rag-subgraph-diagram.mmd", import.meta.url),
+    "utf8",
+).trim();
+
+/**
+ * Regression for the blank diagram, captured from the live Groq response for
+ * `AAPLecture5_RAG_Fundamentals.pdf`.
+ *
+ * ## What this pins
+ *
+ * Two separate defects showed up as the same blank box:
+ *
+ * 1. The component rendered into a container measuring `clientWidth === 0`, because
+ *    `results-view.tsx` mounts every tab panel and hides the inactive ones.
+ *    Mermaid resolved successfully having drawn nothing, and because the effect
+ *    depends only on `[code, containerRef]`, opening the tab never redrew it.
+ * 2. `mermaid.render(id, text, container)` does not draw into `container`. That
+ *    third argument is a scratch element for measuring labels, and Mermaid empties
+ *    it again before resolving - captured live as `removeTempElements` removing the
+ *    container's own child. The diagram was rendered correctly and then deleted,
+ *    one millisecond before the emptiness guard read it.
+ *
+ * This source is ordinary Mermaid, so a regression in either fix is visible here and
+ * nowhere else: a single-node diagram would not have exposed either.
+ */
+test("renders the live subgraph diagram that reached a reader blank", async ({ page }) => {
+    await mockSummarizeWithDiagram(page, LIVE_RAG_SUBGRAPH_DIAGRAM);
+    await page.goto("/");
+
+    await page.setInputFiles(fileInput, {
+        name: "AAPLecture5_RAG_Fundamentals.pdf",
+        mimeType: "application/pdf",
+        buffer: minimalPdfBytes(),
+    });
+    await expect(page.getByRole("region", { name: "Study material" })).toBeVisible({
+        timeout: 15_000,
+    });
+
+    // The panel is mounted and hidden at this point. Nothing should be drawn into
+    // it, and - just as important - nothing should be reported as broken yet,
+    // because the render has not been attempted.
+    const hiddenPanel = page.locator('[role="tabpanel"][hidden]').filter({
+        has: page.locator("div[role='img']"),
+    });
+    if ((await hiddenPanel.count()) > 0) {
+        await expect(hiddenPanel.locator("div[role='img'] svg")).toHaveCount(0);
+    }
+
+    await page.getByRole("tab", { name: "Diagram" }).click();
+
+    const panel = page.locator('[role="tabpanel"]:not([hidden])');
+    const svg = panel.locator("div[role='img'] svg");
+
+    // Painted primitives, not just any SVG. Labels are rendered inside
+    // `<foreignObject>` rather than as `<text>`, so counting `<text>` would report
+    // a perfectly good diagram as empty.
+    await expect
+        .poll(
+            async () =>
+                svg.evaluate(
+                    (el) => el.querySelectorAll("path, rect, polygon, circle").length,
+                ),
+            { timeout: 15_000 },
+        )
+        .toBeGreaterThan(0);
+
+    await expect(page.getByText(DIAGRAM_FAILURE_NOTICE)).toHaveCount(0);
+
+    // Visible, not merely present.
+    const box = await svg.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThan(0);
+    expect(box?.height ?? 0).toBeGreaterThan(0);
+});
+
+test("still reports the failure notice for genuinely invalid Mermaid", async ({ page }) => {
         // Fixing the reported bug must not silence this notice. Invalid source
         // has to fail visibly rather than leave the reader with a blank card.
         await mockSummarizeWithDiagram(page, "flowchart TD\n    A[Broken -->");

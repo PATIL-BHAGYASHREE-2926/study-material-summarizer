@@ -41,6 +41,17 @@ const FAILURE_NOTICE =
     "This diagram could not be displayed. The summary and quiz below are unaffected.";
 
 /**
+ * Build the SVG markup Mermaid would hand back.
+ *
+ * `inner` is the drawing itself. Real Mermaid output always carries primitives -
+ * the component rejects an SVG with nothing but wrappers, which is how an empty
+ * rendering becomes a visible notice rather than a blank box.
+ */
+function containerlessSvgMarkup(inner: string): string {
+    return `<svg xmlns="http://www.w3.org/2000/svg" id="mermaid-diagram-test" data-testid="mermaid-svg"><style></style>${inner}</svg>`;
+}
+
+/**
  * The real mermaid parser, with only the renderer stubbed.
  *
  * `parse` is genuine, so the valid/invalid split in these tests is mermaid's own
@@ -62,24 +73,16 @@ vi.mock("mermaid", async () => {
         default: {
             initialize: actual.default.initialize,
             parse: (code: string) => actual.default.parse(code),
-            render: async (_id: string, _code: string, container: Element) => {
-                const ns = "http://www.w3.org/2000/svg";
-                const svg = container.ownerDocument.createElementNS(ns, "svg");
-                svg.setAttribute("data-testid", "mermaid-svg");
+            render: async (_id: string, _code: string) => {
+                // Mermaid returns the diagram as a markup *string*, not an element -
+                // the component parses and adopts it. Modelling the real contract
+                // here matters: the earlier element-returning stub let the component
+                // append straight into the container and never exercise this path.
+                const svg = containerlessSvgMarkup(
+                    '<g><text>A rendered node</text></g>',
+                );
 
-                // Real Mermaid output always carries drawing primitives, and the
-                // component rejects an SVG that contains none - that is how an empty
-                // rendering becomes a visible notice instead of a blank box. A bare
-                // `<svg>` here would model a rendering that cannot occur, and would
-                // make these tests contradict that guard.
-                const group = container.ownerDocument.createElementNS(ns, "g");
-                const label = container.ownerDocument.createElementNS(ns, "text");
-                label.textContent = "A rendered node";
-                group.appendChild(label);
-                svg.appendChild(group);
-
-                container.appendChild(svg);
-                return svg;
+                return { svg, bindFunctions: undefined };
             },
         },
     };

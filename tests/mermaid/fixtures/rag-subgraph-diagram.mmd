@@ -1,0 +1,8 @@
+flowchart TD
+    A["Retrieve"] --> B["Augment"] --> C["Generate"]
+    subgraph Indexing
+        D["Document Ingestion"] --> E["Embedding Creation"] --> F["Vector DB Store"]
+    end
+    subgraph Query
+        G["User Query"] --> H["Embedding Query"] --> I["Nearest Neighbor Search"] --> J["Retrieved Docs"] --> B
+    end
