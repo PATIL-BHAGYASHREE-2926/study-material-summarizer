@@ -46,6 +46,77 @@ type MermaidApi = {
 };
 
 /**
+ * Import and configure Mermaid exactly once per page.
+ *
+ * `mermaid.initialize` mutates module-global state: it replaces the render API and
+ * resets Mermaid's own caches. Calling it on every effect run meant two
+ * concurrent runs could reset that state *while the other was mid-render*, which
+ * contributes to the empty-SVG failure below. One shared, already-configured
+ * instance means a later run can never disturb an earlier one.
+ */
+let mermaidPromise: Promise<MermaidApi> | undefined;
+
+function loadMermaid(): Promise<MermaidApi> {
+    mermaidPromise ??= import("mermaid").then((module) => {
+        const mermaid = module.default as unknown as MermaidApi;
+        mermaid.initialize({ ...MERMAID_PARSE_CONFIG });
+        return mermaid;
+    });
+    return mermaidPromise;
+}
+
+/**
+ * Serialises every `mermaid.render` call in this page.
+ *
+ * Mermaid keeps the diagram under construction, and the id currently being drawn,
+ * in module-global state rather than in anything passed in by the caller. Two
+ * overlapping renders therefore overwrite each other's state, and one of them
+ * finishes by emitting an SVG that carries its `<style>` block but none of the
+ * graph. Nothing throws, so the caller sees a resolved promise and believes the
+ * diagram was drawn.
+ *
+ * Queueing is what makes this safe: renders complete strictly one after another,
+ * each fully finished before the next begins, so there is no interleaving to
+ * corrupt the global state. A rejected render is swallowed here rather than
+ * poisoning the chain for everything queued behind it; the caller still receives
+ * the rejection through its own promise.
+ */
+let renderQueue: Promise<unknown> = Promise.resolve();
+
+function renderDiagram(id: string, code: string, container: Element): Promise<unknown> {
+    const result = renderQueue.then(async () => {
+        const mermaid = await loadMermaid();
+        return mermaid.render(id, code, container);
+    });
+    // Swallow on the chain only, so one failure does not reject every later render.
+    renderQueue = result.catch(() => undefined);
+    return result;
+}
+
+/**
+ * Whether a rendered SVG actually contains a drawing.
+ *
+ * Mermaid reports success for a diagram it drew as nothing at all: the `<svg>`
+ * arrives with its `<style>` block and no geometry. That is invisible to a
+ * visibility check - the element has a bounding box - which is how an empty box
+ * reached a reader with no warning.
+ *
+ * Checking for real drawing primitives rather than for a particular diagram type
+ * keeps this working for flowcharts, sequence diagrams and the rest without
+ * enumerating them: any diagram Mermaid can draw emits at least one `g`, `path`,
+ * `rect` or text primitive, and an empty rendering emits none. The list is
+ * deliberately short - a wider one picks up element names that this environment's
+ * selector engine mishandles inside an SVG subtree, which would make a genuinely
+ * drawn diagram look empty and show a false warning.
+ */
+function hasDrawableContent(container: Element): boolean {
+    const svg = container.querySelector("svg");
+    if (svg === null) return false;
+
+    return svg.querySelectorAll("g, path, rect, text").length > 0;
+}
+
+/**
  * Draw `code` into `containerRef`, or report why it could not be drawn.
  *
  * Never throws: a render failure is a user-visible state, not an exception that
@@ -68,22 +139,48 @@ function useMermaidRender(
 
         const run = async (): Promise<void> => {
             try {
-                const mermaidModule = await import("mermaid");
-                const mermaid = mermaidModule.default as unknown as MermaidApi;
-                mermaid.initialize({ ...MERMAID_PARSE_CONFIG });
+                const mermaid = await loadMermaid();
 
                 // The browser-side parse gate. Sanitisation already happened on
                 // the server; this is the syntax check that only a DOM allows.
                 await mermaid.parse(code);
+
+                /**
+                 * Ignore a run that has already been superseded.
+                 *
+                 * React Strict Mode runs an effect twice in development, and because
+                 * the import and the parse are both awaited, the two runs overlap
+                 * rather than queue. A discarded run must not draw, or it races the
+                 * surviving one for the container. Guarding `setState` alone was not
+                 * enough: a cancelled run still reached `render`.
+                 */
+                if (cancelled) return;
 
                 // The container is handed to mermaid rather than receiving its
                 // output as a string: no HTML sink exists in this component.
                 // `useId` cannot be used for the element id because mermaid also
                 // queries it, and its colons are awkward in a CSS selector.
                 const renderId = `mermaid-diagram-${crypto.randomUUID().slice(0, 8)}`;
-                await mermaid.render(renderId, code, container);
+                await renderDiagram(renderId, code, container);
 
-                if (!cancelled) setState("drawn");
+                if (cancelled) return;
+
+                /**
+                 * A resolved promise is not proof of a diagram.
+                 *
+                 * Mermaid reports success for a rendering that contains nothing, and
+                 * the reader would be left with an empty box and no explanation -
+                 * the exact failure this component's own notice exists to prevent.
+                 * An empty drawing is therefore treated as a failure and logged, so
+                 * it is diagnosable from the console rather than silent.
+                 */
+                if (!hasDrawableContent(container)) {
+                    console.error("[diagram] Mermaid resolved without drawing any graph nodes");
+                    setState("failed");
+                    return;
+                }
+
+                setState("drawn");
             } catch (error) {
                 // Logged, not swallowed. A parse error here is the only signal
                 // that a diagram was rejected: the server-side parse gate is

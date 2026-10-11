@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { expect, test } from "@playwright/test";
 
 import {
@@ -36,6 +38,18 @@ const notice = (page: import("@playwright/test").Page) => page.getByRole("status
  */
 const DIAGRAM_FAILURE_NOTICE =
     "This diagram could not be displayed. The summary and quiz below are unaffected.";
+
+/**
+ * The diagram that reached a reader as an empty bordered box.
+ *
+ * Read from disk rather than inlined so the fixture stays the single source of
+ * truth for this regression, shared with any unit test that covers the same
+ * source through the server pipeline.
+ */
+const RAG_DIAGRAM = readFileSync(
+    new URL("../tests/mermaid/fixtures/rag-diagram.mmd", import.meta.url),
+    "utf8",
+).trim();
 
 /** Answer the next upload with a payload carrying the given Mermaid source. */
 async function mockSummarizeWithDiagram(page: import("@playwright/test").Page, mermaidCode: string) {
@@ -131,6 +145,56 @@ test.describe("upload to results", () => {
 
         // The label is drawn, not silently dropped.
         await expect(diagramPanel).toContainText(/Water splitting/i);
+    });
+
+    /**
+     * Regression: a valid, fully quoted diagram that rendered as an empty box.
+     *
+     * The reported symptom was the Diagram tab showing neither a diagram nor any
+     * notice - just the bare bordered container from
+     * `src/components/mermaid-diagram.tsx`. That state is `drawn`: `mermaid.render`
+     * resolved without throwing and the container still had no children.
+     *
+     * This source is the one the reader's server returned. It is ordinary,
+     * entirely quoted Mermaid, so `normalizeMermaidSyntax` has nothing to do
+     * (`changed === false`) and the sanitiser's removal rules do not fire. That is
+     * what makes it a useful pin: the failure is not about syntax at all, and a
+     * test built around a synthetic syntax error would never have caught it.
+     */
+    test("renders the RAG diagram that reached a reader as an empty box", async ({ page }) => {
+        await mockSummarizeWithDiagram(page, RAG_DIAGRAM);
+        await page.goto("/");
+
+        await page.setInputFiles(fileInput, {
+            name: "AAPLecture5_RAG_Fundamentals.pdf",
+            mimeType: "application/pdf",
+            buffer: minimalPdfBytes(),
+        });
+        await expect(page.getByRole("region", { name: "Study material" })).toBeVisible({
+            timeout: 15_000,
+        });
+
+        await page.getByRole("tab", { name: "Diagram" }).click();
+
+        await page.getByRole("tab", { name: "Diagram" }).click();
+
+        const diagramPanel = page.locator('[role="tabpanel"]:not([hidden])');
+
+        // No notice appears for this failure, so the regression also pins that the
+        // empty container is never accompanied by an explanation.
+        await expect(page.getByText(DIAGRAM_FAILURE_NOTICE)).toHaveCount(0);
+
+        // Scoped to the diagram's own container, because the card contains other
+        // elements an unscoped `svg` locator could match.
+        const svg = diagramPanel.locator("div[role='img'] svg");
+        await expect(svg).toBeVisible({ timeout: 15_000 });
+
+        // The decisive assertion. A container that is still `display: none` when
+        // mermaid measures it yields an SVG with `width="100%"` and no children:
+        // present, technically visible, and completely empty. Only the label text
+        // distinguishes that from a real diagram, which is why a visibility-only
+        // assertion let this ship.
+        await expect(svg).toContainText("Chunking Strategies");
     });
 
     test("still reports the failure notice for genuinely invalid Mermaid", async ({ page }) => {

@@ -1,0 +1,20 @@
+flowchart TD
+    A["Chunking Strategies"] --> B["Fixed-size"]
+    A --> C["Recursive"]
+    A --> D["Semantic"]
+    A --> E["Overlap"]
+    B --> F["Trade-off: simplicity vs relevance"]
+    C --> F
+    D --> F
+    E --> F
+    F --> G["Retrieval Quality"]
+    G --> H["Precision@k"]
+    G --> I["Recall@k"]
+    H --> J["Hybrid Retrieval"]
+    I --> J
+    J --> K["Two retrievers (BM25 + dense)"]
+    K --> L["Ranked lists"]
+    L --> M["Reciprocal Rank Fusion (RRF)"]
+    M --> N["Improved Recall & Precision"]
+    N --> O["Reduced Failure Modes"]
+    O --> P["Better RAG Performance"]

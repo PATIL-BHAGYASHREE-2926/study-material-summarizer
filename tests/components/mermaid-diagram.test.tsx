@@ -63,11 +63,21 @@ vi.mock("mermaid", async () => {
             initialize: actual.default.initialize,
             parse: (code: string) => actual.default.parse(code),
             render: async (_id: string, _code: string, container: Element) => {
-                const svg = container.ownerDocument.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "svg",
-                );
+                const ns = "http://www.w3.org/2000/svg";
+                const svg = container.ownerDocument.createElementNS(ns, "svg");
                 svg.setAttribute("data-testid", "mermaid-svg");
+
+                // Real Mermaid output always carries drawing primitives, and the
+                // component rejects an SVG that contains none - that is how an empty
+                // rendering becomes a visible notice instead of a blank box. A bare
+                // `<svg>` here would model a rendering that cannot occur, and would
+                // make these tests contradict that guard.
+                const group = container.ownerDocument.createElementNS(ns, "g");
+                const label = container.ownerDocument.createElementNS(ns, "text");
+                label.textContent = "A rendered node";
+                group.appendChild(label);
+                svg.appendChild(group);
+
                 container.appendChild(svg);
                 return svg;
             },
