@@ -1,9 +1,3 @@
-
----
-
-### 2. `.opencode/skills/gemini-ai/SKILL.md`
-
-```markdown
 ---
 name: gemini-ai
 description: Design and implement safe Gemini API workflows for summaries, Mermaid diagrams, and structured 20-question quizzes.
